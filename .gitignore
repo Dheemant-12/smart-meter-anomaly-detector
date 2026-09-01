@@ -4,3 +4,24 @@ __pycache__/
 .env
 data/raw/
 data/processed/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+.env
+.env.*
+
+# Data
+data/raw/
+data/processed/
+
+# IDE
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
