@@ -44,14 +44,45 @@ def get_meters():
     data = load_data()
 
     meters = sorted(
-        data["meter_id"]
-        .unique()
-        .tolist()
+        data["meter_id"].unique().tolist()
     )
 
     return {
         "count": len(meters),
         "meters": meters,
+    }
+
+
+@router.get("/summary")
+def get_summary():
+    data = load_data()
+
+    anomalies = data[
+        data["classification"] != "normal"
+    ]
+
+    theft_count = int(
+        (
+            data["classification"]
+            == "theft_tampering"
+        ).sum()
+    )
+
+    fault_count = int(
+        (
+            data["classification"]
+            == "meter_fault"
+        ).sum()
+    )
+
+    return {
+        "total_meters": int(
+            data["meter_id"].nunique()
+        ),
+        "total_readings": len(data),
+        "total_anomalies": len(anomalies),
+        "theft_tampering": theft_count,
+        "meter_faults": fault_count,
     }
 
 
@@ -62,6 +93,12 @@ def get_anomalies():
     anomalies = data[
         data["classification"] != "normal"
     ]
+
+    # Return newest anomalies first.
+    anomalies = anomalies.sort_values(
+        "timestamp",
+        ascending=False,
+    )
 
     return {
         "count": len(anomalies),
