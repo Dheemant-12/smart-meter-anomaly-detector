@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 from fastapi import APIRouter, HTTPException
 
+
 router = APIRouter()
 
 BASE_DIR = Path(__file__).resolve().parents[3]
@@ -11,24 +12,31 @@ DATA_FILE = (
     BASE_DIR
     / "data"
     / "processed"
-    / "classified_results.csv"
+    / "api_dataset.csv"
 )
 
-df = None
+_df = None
 
 
 def load_data():
-    global df
+    global _df
 
-    if df is None:
+    if _df is None:
         if not DATA_FILE.exists():
             raise FileNotFoundError(
-                f"Data file not found: {DATA_FILE}"
+                f"API dataset not found: {DATA_FILE}"
             )
 
-        df = pd.read_csv(DATA_FILE)
+        print("Loading lightweight API dataset...")
 
-    return df
+        _df = pd.read_csv(
+            DATA_FILE,
+            parse_dates=["timestamp"],
+        )
+
+        print(f"Loaded {_df.shape[0]:,} rows.")
+
+    return _df
 
 
 @router.get("/meters")
@@ -36,7 +44,9 @@ def get_meters():
     data = load_data()
 
     meters = sorted(
-        data["meter_id"].unique().tolist()
+        data["meter_id"]
+        .unique()
+        .tolist()
     )
 
     return {
@@ -63,7 +73,9 @@ def get_anomalies():
                 "classification",
                 "confidence_score",
             ]
-        ].to_dict(orient="records"),
+        ].to_dict(
+            orient="records"
+        ),
     }
 
 
@@ -96,5 +108,7 @@ def get_meter(meter_id: str):
                 "classification",
                 "confidence_score",
             ]
-        ].to_dict(orient="records"),
+        ].to_dict(
+            orient="records"
+        ),
     }
