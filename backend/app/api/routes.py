@@ -94,7 +94,6 @@ def get_anomalies():
         data["classification"] != "normal"
     ]
 
-    # Return newest anomalies first.
     anomalies = anomalies.sort_values(
         "timestamp",
         ascending=False,
@@ -132,7 +131,10 @@ def get_meter(meter_id: str):
 
     anomalies = meter_data[
         meter_data["classification"] != "normal"
-    ]
+    ].sort_values(
+        "timestamp",
+        ascending=False,
+    )
 
     return {
         "meter_id": meter_id,

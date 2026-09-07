@@ -6,17 +6,22 @@ function App() {
   const [summary, setSummary] = useState(null);
   const [meters, setMeters] = useState([]);
   const [anomalies, setAnomalies] = useState([]);
+  const [selectedMeter, setSelectedMeter] = useState(null);
+  const [meterDetails, setMeterDetails] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const [summaryResponse, metersResponse, anomaliesResponse] =
-          await Promise.all([
-            fetch(`${API_URL}/summary`),
-            fetch(`${API_URL}/meters`),
-            fetch(`${API_URL}/anomalies`),
-          ]);
+        const [
+          summaryResponse,
+          metersResponse,
+          anomaliesResponse,
+        ] = await Promise.all([
+          fetch(`${API_URL}/summary`),
+          fetch(`${API_URL}/meters`),
+          fetch(`${API_URL}/anomalies`),
+        ]);
 
         if (
           !summaryResponse.ok ||
@@ -28,18 +33,43 @@ function App() {
 
         const summaryData = await summaryResponse.json();
         const metersData = await metersResponse.json();
-        const anomaliesData = await anomaliesResponse.json();
+        const anomaliesData =
+          await anomaliesResponse.json();
 
         setSummary(summaryData);
         setMeters(metersData.meters);
         setAnomalies(anomaliesData.anomalies);
       } catch (err) {
-        setError("Could not connect to backend API.");
+        setError(
+          "Could not connect to backend API."
+        );
       }
     }
 
     loadDashboard();
   }, []);
+
+  async function selectMeter(meterId) {
+    try {
+      setSelectedMeter(meterId);
+
+      const response = await fetch(
+        `${API_URL}/meters/${meterId}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Meter request failed");
+      }
+
+      const data = await response.json();
+
+      setMeterDetails(data);
+    } catch (err) {
+      setError(
+        "Could not load meter details."
+      );
+    }
+  }
 
   if (error) {
     return (
@@ -54,7 +84,8 @@ function App() {
       <header>
         <h1>Smart Meter Anomaly Detector</h1>
         <p>
-          Real-time electricity monitoring and anomaly detection
+          Real-time electricity monitoring and
+          anomaly detection
         </p>
       </header>
 
@@ -87,13 +118,89 @@ function App() {
 
         <div className="meter-grid">
           {meters.map((meter) => (
-            <div className="meter" key={meter}>
+            <button
+              className={
+                selectedMeter === meter
+                  ? "meter selected"
+                  : "meter"
+              }
+              key={meter}
+              onClick={() => selectMeter(meter)}
+            >
               <strong>{meter}</strong>
               <span>● Online</span>
-            </div>
+            </button>
           ))}
         </div>
       </section>
+
+      {meterDetails && (
+        <section className="card">
+          <div className="detail-header">
+            <div>
+              <h2>
+                {meterDetails.meter_id}
+              </h2>
+              <p>
+                {meterDetails.total_readings.toLocaleString()}{" "}
+                readings
+              </p>
+            </div>
+
+            <div className="detail-count">
+              <strong>
+                {meterDetails.anomaly_count}
+              </strong>
+              <span>anomalies</span>
+            </div>
+          </div>
+
+          {meterDetails.anomalies.length === 0 ? (
+            <p>No anomalies detected.</p>
+          ) : (
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Type</th>
+                    <th>Consumption</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {meterDetails.anomalies
+                    .slice(0, 20)
+                    .map((anomaly, index) => (
+                      <tr key={index}>
+                        <td>
+                          {new Date(
+                            anomaly.timestamp
+                          ).toLocaleString()}
+                        </td>
+
+                        <td>
+                          {anomaly.classification}
+                        </td>
+
+                        <td>
+                          {Number(
+                            anomaly.consumption
+                          ).toFixed(3)}
+                        </td>
+
+                        <td>
+                          {anomaly.confidence_score}%
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="card">
         <h2>Recent Anomalies</h2>
@@ -119,19 +226,23 @@ function App() {
                   .map((anomaly, index) => (
                     <tr key={index}>
                       <td>{anomaly.meter_id}</td>
+
                       <td>
                         {new Date(
                           anomaly.timestamp
                         ).toLocaleString()}
                       </td>
+
                       <td>
                         {anomaly.classification}
                       </td>
+
                       <td>
                         {Number(
                           anomaly.consumption
                         ).toFixed(3)}
                       </td>
+
                       <td>
                         {anomaly.confidence_score}%
                       </td>
