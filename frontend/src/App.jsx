@@ -8,6 +8,7 @@ function App() {
   const [anomalies, setAnomalies] = useState([]);
   const [selectedMeter, setSelectedMeter] = useState(null);
   const [meterDetails, setMeterDetails] = useState(null);
+  const [latestReading, setLatestReading] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -31,8 +32,12 @@ function App() {
           throw new Error("API request failed");
         }
 
-        const summaryData = await summaryResponse.json();
-        const metersData = await metersResponse.json();
+        const summaryData =
+          await summaryResponse.json();
+
+        const metersData =
+          await metersResponse.json();
+
         const anomaliesData =
           await anomaliesResponse.json();
 
@@ -49,6 +54,35 @@ function App() {
     loadDashboard();
   }, []);
 
+  useEffect(() => {
+    async function loadLatestReading() {
+      try {
+        const response = await fetch(
+          `${API_URL}/stream/latest`
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+
+        setLatestReading(data);
+      } catch (err) {
+        console.log("Stream unavailable");
+      }
+    }
+
+    loadLatestReading();
+
+    const interval = setInterval(
+      loadLatestReading,
+      1000
+    );
+
+    return () => clearInterval(interval);
+  }, []);
+
   async function selectMeter(meterId) {
     try {
       setSelectedMeter(meterId);
@@ -58,7 +92,9 @@ function App() {
       );
 
       if (!response.ok) {
-        throw new Error("Meter request failed");
+        throw new Error(
+          "Meter request failed"
+        );
       }
 
       const data = await response.json();
@@ -79,10 +115,15 @@ function App() {
     );
   }
 
+  const liveIsAnomaly =
+    latestReading &&
+    latestReading.classification !== "normal";
+
   return (
     <div className="app">
       <header>
         <h1>Smart Meter Anomaly Detector</h1>
+
         <p>
           Real-time electricity monitoring and
           anomaly detection
@@ -113,6 +154,68 @@ function App() {
         </section>
       )}
 
+      {latestReading && (
+        <section
+          className={
+            liveIsAnomaly
+              ? "card live-card alert-card"
+              : "card live-card"
+          }
+        >
+          <div className="live-header">
+            <div>
+              <h2>
+                {liveIsAnomaly
+                  ? "🚨 Anomaly Detected"
+                  : "Live Reading"}
+              </h2>
+
+              <p>
+                Latest reading received from stream
+              </p>
+            </div>
+
+            <span className="live-indicator">
+              ● LIVE
+            </span>
+          </div>
+
+          <div className="live-reading">
+            <div>
+              <strong>
+                {latestReading.meter_id}
+              </strong>
+
+              <span>
+                {new Date(
+                  latestReading.timestamp
+                ).toLocaleString()}
+              </span>
+            </div>
+
+            <div>
+              <strong>
+                {latestReading.consumption} kW
+              </strong>
+
+              <span>
+                {latestReading.classification}
+              </span>
+            </div>
+
+            <div>
+              <strong>
+                {latestReading.confidence_score}%
+              </strong>
+
+              <span>
+                Confidence
+              </span>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="card">
         <h2>Meter Status</h2>
 
@@ -125,9 +228,12 @@ function App() {
                   : "meter"
               }
               key={meter}
-              onClick={() => selectMeter(meter)}
+              onClick={() =>
+                selectMeter(meter)
+              }
             >
               <strong>{meter}</strong>
+
               <span>● Online</span>
             </button>
           ))}
@@ -141,6 +247,7 @@ function App() {
               <h2>
                 {meterDetails.meter_id}
               </h2>
+
               <p>
                 {meterDetails.total_readings.toLocaleString()}{" "}
                 readings
@@ -151,6 +258,7 @@ function App() {
               <strong>
                 {meterDetails.anomaly_count}
               </strong>
+
               <span>anomalies</span>
             </div>
           </div>
@@ -225,7 +333,9 @@ function App() {
                   .slice(0, 15)
                   .map((anomaly, index) => (
                     <tr key={index}>
-                      <td>{anomaly.meter_id}</td>
+                      <td>
+                        {anomaly.meter_id}
+                      </td>
 
                       <td>
                         {new Date(
