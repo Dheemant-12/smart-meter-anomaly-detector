@@ -1,21 +1,14 @@
 from pathlib import Path
+import json
 import time
-
 import pandas as pd
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-INPUT_FILE = (
-    BASE_DIR
-    / "data"
-    / "processed"
-    / "api_dataset.csv"
-)
+INPUT_FILE = BASE_DIR / "data" / "processed" / "api_dataset.csv"
+OUTPUT_FILE = BASE_DIR / "data" / "processed" / "latest_reading.json"
 
-# Keep the demo tiny and fast.
-READINGS_PER_METER = 20
-DELAY_SECONDS = 0.05
+DELAY_SECONDS = 1
 
 
 def load_data():
@@ -23,48 +16,87 @@ def load_data():
 
     df = pd.read_csv(
         INPUT_FILE,
+        usecols=[
+            "meter_id",
+            "timestamp",
+            "consumption",
+            "classification",
+            "confidence_score",
+        ],
         parse_dates=["timestamp"],
-    )
-
-    df = df.sort_values(
-        ["timestamp", "meter_id"]
     )
 
     return df
 
 
-def stream_data(df):
-    print("\n===== LIVE METER STREAM =====")
-    print("Starting stream...\n")
+def write_latest_reading(row):
+    reading = {
+        "meter_id": row.meter_id,
+        "timestamp": str(row.timestamp),
+        "consumption": round(float(row.consumption), 3),
+        "classification": row.classification,
+        "confidence_score": float(row.confidence_score),
+    }
 
-    count = 0
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    for _, row in df.iterrows():
-        print(
-            f"[STREAM] "
-            f"{row['timestamp']} | "
-            f"{row['meter_id']} | "
-            f"{row['consumption']:.3f} kW | "
-            f"{row['classification']}"
-        )
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
+        json.dump(reading, file, indent=2)
 
-        count += 1
 
-        if count >= READINGS_PER_METER * 10:
-            break
-
-        time.sleep(DELAY_SECONDS)
+def stream_row(row):
+    write_latest_reading(row)
 
     print(
-        f"\nStreamed {count} readings successfully."
+        f"[STREAM] {row.timestamp} | "
+        f"{row.meter_id} | "
+        f"{row.consumption:.3f} kW | "
+        f"{row.classification}"
     )
 
 
 def main():
     df = load_data()
-    stream_data(df)
 
-    print("\nDay 18 streaming simulation completed.")
+    normal = df[df["classification"] == "normal"]
+    theft = df[df["classification"] == "theft_tampering"]
+    fault = df[df["classification"] == "meter_fault"]
+
+    if theft.empty or fault.empty:
+        raise RuntimeError("Required anomaly rows were not found.")
+
+    print("\n===== LIVE ANOMALY DEMO =====")
+    print("Normal → Theft → Fault → Normal\n")
+
+    # 10 normal readings
+    for row in normal.head(10).itertuples(index=False):
+        stream_row(row)
+        time.sleep(DELAY_SECONDS)
+
+    # Theft demonstration
+    print("\n🚨 THEFT/TAMPERING EVENT\n")
+
+    for row in theft.head(1).itertuples(index=False):
+        stream_row(row)
+        time.sleep(3)
+
+    # Fault demonstration
+    print("\n🚨 METER FAULT EVENT\n")
+
+    for row in fault.head(1).itertuples(index=False):
+        stream_row(row)
+        time.sleep(3)
+
+    # Return to normal
+    print("\n✅ RETURNING TO NORMAL\n")
+
+    for row in normal.iloc[10:20].itertuples(index=False):
+        stream_row(row)
+        time.sleep(DELAY_SECONDS)
+
+    print("\n===== DEMO COMPLETED =====")
+    print("Latest reading saved to:")
+    print(OUTPUT_FILE)
 
 
 if __name__ == "__main__":
