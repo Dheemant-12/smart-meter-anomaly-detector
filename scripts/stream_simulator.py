@@ -6,7 +6,8 @@ import pandas as pd
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 INPUT_FILE = BASE_DIR / "data" / "processed" / "api_dataset.csv"
-OUTPUT_FILE = BASE_DIR / "data" / "processed" / "latest_reading.json"
+LATEST_FILE = BASE_DIR / "data" / "processed" / "latest_reading.json"
+HISTORY_FILE = BASE_DIR / "data" / "processed" / "stream_history.json"
 
 DELAY_SECONDS = 1
 
@@ -14,7 +15,7 @@ DELAY_SECONDS = 1
 def load_data():
     print("Loading API dataset...")
 
-    df = pd.read_csv(
+    return pd.read_csv(
         INPUT_FILE,
         usecols=[
             "meter_id",
@@ -26,11 +27,9 @@ def load_data():
         parse_dates=["timestamp"],
     )
 
-    return df
 
-
-def write_latest_reading(row):
-    reading = {
+def create_reading(row):
+    return {
         "meter_id": row.meter_id,
         "timestamp": str(row.timestamp),
         "consumption": round(float(row.consumption), 3),
@@ -38,21 +37,13 @@ def write_latest_reading(row):
         "confidence_score": float(row.confidence_score),
     }
 
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
+def save_reading(reading, history):
+    with open(LATEST_FILE, "w", encoding="utf-8") as file:
         json.dump(reading, file, indent=2)
 
-
-def stream_row(row):
-    write_latest_reading(row)
-
-    print(
-        f"[STREAM] {row.timestamp} | "
-        f"{row.meter_id} | "
-        f"{row.consumption:.3f} kW | "
-        f"{row.classification}"
-    )
+    with open(HISTORY_FILE, "w", encoding="utf-8") as file:
+        json.dump(history, file, indent=2)
 
 
 def main():
@@ -65,38 +56,75 @@ def main():
     if theft.empty or fault.empty:
         raise RuntimeError("Required anomaly rows were not found.")
 
-    print("\n===== LIVE ANOMALY DEMO =====")
-    print("Normal → Theft → Fault → Normal\n")
+    print("\n===== LIVE STREAM WITH HISTORY =====\n")
 
-    # 10 normal readings
+    history = []
+
+    # Normal readings
     for row in normal.head(10).itertuples(index=False):
-        stream_row(row)
+        reading = create_reading(row)
+        history.append(reading)
+        save_reading(reading, history)
+
+        print(
+            f"[STREAM] {reading['meter_id']} | "
+            f"{reading['consumption']} kW | "
+            f"{reading['classification']}"
+        )
+
         time.sleep(DELAY_SECONDS)
 
-    # Theft demonstration
+    # Theft
     print("\n🚨 THEFT/TAMPERING EVENT\n")
 
-    for row in theft.head(1).itertuples(index=False):
-        stream_row(row)
-        time.sleep(3)
+    row = theft.head(1).iloc[0]
+    reading = create_reading(row)
+    history.append(reading)
+    save_reading(reading, history)
 
-    # Fault demonstration
+    print(
+        f"[STREAM] {reading['meter_id']} | "
+        f"{reading['consumption']} kW | "
+        f"{reading['classification']}"
+    )
+
+    time.sleep(3)
+
+    # Fault
     print("\n🚨 METER FAULT EVENT\n")
 
-    for row in fault.head(1).itertuples(index=False):
-        stream_row(row)
-        time.sleep(3)
+    row = fault.head(1).iloc[0]
+    reading = create_reading(row)
+    history.append(reading)
+    save_reading(reading, history)
 
-    # Return to normal
+    print(
+        f"[STREAM] {reading['meter_id']} | "
+        f"{reading['consumption']} kW | "
+        f"{reading['classification']}"
+    )
+
+    time.sleep(3)
+
+    # Normal again
     print("\n✅ RETURNING TO NORMAL\n")
 
     for row in normal.iloc[10:20].itertuples(index=False):
-        stream_row(row)
+        reading = create_reading(row)
+        history.append(reading)
+        save_reading(reading, history)
+
+        print(
+            f"[STREAM] {reading['meter_id']} | "
+            f"{reading['consumption']} kW | "
+            f"{reading['classification']}"
+        )
+
         time.sleep(DELAY_SECONDS)
 
-    print("\n===== DEMO COMPLETED =====")
-    print("Latest reading saved to:")
-    print(OUTPUT_FILE)
+    print("\n===== STREAM COMPLETED =====")
+    print(f"History entries: {len(history)}")
+    print(f"Saved to: {HISTORY_FILE}")
 
 
 if __name__ == "__main__":
