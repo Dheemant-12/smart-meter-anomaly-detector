@@ -143,3 +143,45 @@ th {
   background: #fee2e2;
   border-radius: 8px;
 }
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header p {
+  margin-bottom: 0;
+}
+
+.history-count {
+  font-weight: bold;
+}
+
+.status-normal {
+  font-weight: bold;
+}
+
+.status-anomaly {
+  font-weight: bold;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-container th,
+.table-container td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.table-container th {
+  font-weight: bold;
+}

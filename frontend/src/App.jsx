@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import "./index.css";
 
 const API_URL = "http://127.0.0.1:8000";
 
@@ -7,9 +8,8 @@ function App() {
   const [meters, setMeters] = useState([]);
   const [anomalies, setAnomalies] = useState([]);
   const [selectedMeter, setSelectedMeter] = useState(null);
-  const [meterDetails, setMeterDetails] = useState(null);
   const [latestReading, setLatestReading] = useState(null);
-  const [error, setError] = useState("");
+  const [streamHistory, setStreamHistory] = useState([]);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -24,30 +24,15 @@ function App() {
           fetch(`${API_URL}/anomalies`),
         ]);
 
-        if (
-          !summaryResponse.ok ||
-          !metersResponse.ok ||
-          !anomaliesResponse.ok
-        ) {
-          throw new Error("API request failed");
-        }
-
-        const summaryData =
-          await summaryResponse.json();
-
-        const metersData =
-          await metersResponse.json();
-
-        const anomaliesData =
-          await anomaliesResponse.json();
+        const summaryData = await summaryResponse.json();
+        const metersData = await metersResponse.json();
+        const anomaliesData = await anomaliesResponse.json();
 
         setSummary(summaryData);
         setMeters(metersData.meters);
         setAnomalies(anomaliesData.anomalies);
-      } catch (err) {
-        setError(
-          "Could not connect to backend API."
-        );
+      } catch (error) {
+        console.error("Dashboard loading failed:", error);
       }
     }
 
@@ -61,14 +46,11 @@ function App() {
           `${API_URL}/stream/latest`
         );
 
-        if (!response.ok) {
-          return;
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
-
         setLatestReading(data);
-      } catch (err) {
+      } catch (error) {
         console.log("Stream unavailable");
       }
     }
@@ -83,36 +65,45 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  async function selectMeter(meterId) {
-    try {
-      setSelectedMeter(meterId);
+  useEffect(() => {
+    async function loadStreamHistory() {
+      try {
+        const response = await fetch(
+          `${API_URL}/stream/history`
+        );
 
+        if (!response.ok) return;
+
+        const data = await response.json();
+        setStreamHistory(data.history);
+      } catch (error) {
+        console.log("Stream history unavailable");
+      }
+    }
+
+    loadStreamHistory();
+
+    const interval = setInterval(
+      loadStreamHistory,
+      1000
+    );
+
+    return () => clearInterval(interval);
+  }, []);
+
+  async function handleMeterClick(meterId) {
+    try {
       const response = await fetch(
         `${API_URL}/meters/${meterId}`
       );
 
-      if (!response.ok) {
-        throw new Error(
-          "Meter request failed"
-        );
-      }
+      if (!response.ok) return;
 
       const data = await response.json();
-
-      setMeterDetails(data);
-    } catch (err) {
-      setError(
-        "Could not load meter details."
-      );
+      setSelectedMeter(data);
+    } catch (error) {
+      console.error("Meter loading failed:", error);
     }
-  }
-
-  if (error) {
-    return (
-      <div className="app">
-        <p className="error">{error}</p>
-      </div>
-    );
   }
 
   const liveIsAnomaly =
@@ -121,36 +112,37 @@ function App() {
 
   return (
     <div className="app">
+
       <header>
         <h1>Smart Meter Anomaly Detector</h1>
-
         <p>
-          Real-time electricity monitoring and
-          anomaly detection
+          Real-time electricity monitoring and anomaly detection
         </p>
       </header>
 
       {summary && (
-        <section className="stats">
-          <div className="card">
-            <h2>{summary.total_meters}</h2>
-            <p>Total Meters</p>
+        <section className="stats-grid">
+
+          <div className="card stat-card">
+            <span>Total Meters</span>
+            <strong>{summary.total_meters}</strong>
           </div>
 
-          <div className="card">
-            <h2>{summary.total_anomalies}</h2>
-            <p>Total Anomalies</p>
+          <div className="card stat-card">
+            <span>Total Anomalies</span>
+            <strong>{summary.total_anomalies}</strong>
           </div>
 
-          <div className="card">
-            <h2>{summary.theft_tampering}</h2>
-            <p>Theft / Tampering</p>
+          <div className="card stat-card">
+            <span>Theft / Tampering</span>
+            <strong>{summary.theft_tampering}</strong>
           </div>
 
-          <div className="card">
-            <h2>{summary.meter_faults}</h2>
-            <p>Meter Faults</p>
+          <div className="card stat-card">
+            <span>Meter Faults</span>
+            <strong>{summary.meter_faults}</strong>
           </div>
+
         </section>
       )}
 
@@ -162,7 +154,9 @@ function App() {
               : "card live-card"
           }
         >
+
           <div className="live-header">
+
             <div>
               <h2>
                 {liveIsAnomaly
@@ -178,9 +172,11 @@ function App() {
             <span className="live-indicator">
               ● LIVE
             </span>
+
           </div>
 
           <div className="live-reading">
+
             <div>
               <strong>
                 {latestReading.meter_id}
@@ -212,157 +208,243 @@ function App() {
                 Confidence
               </span>
             </div>
+
           </div>
+
         </section>
       )}
 
       <section className="card">
-        <h2>Meter Status</h2>
+
+        <h2>Smart Meters</h2>
 
         <div className="meter-grid">
+
           {meters.map((meter) => (
             <button
-              className={
-                selectedMeter === meter
-                  ? "meter selected"
-                  : "meter"
-              }
               key={meter}
-              onClick={() =>
-                selectMeter(meter)
+              className={
+                selectedMeter?.meter_id === meter
+                  ? "meter-card selected"
+                  : "meter-card"
               }
+              onClick={() => handleMeterClick(meter)}
             >
               <strong>{meter}</strong>
-
-              <span>● Online</span>
+              <span>Click to view details</span>
             </button>
           ))}
+
         </div>
+
       </section>
 
-      {meterDetails && (
+      {selectedMeter && (
         <section className="card">
-          <div className="detail-header">
+
+          <h2>
+            Meter Details: {selectedMeter.meter_id}
+          </h2>
+
+          <div className="meter-detail">
+
             <div>
-              <h2>
-                {meterDetails.meter_id}
-              </h2>
-
-              <p>
-                {meterDetails.total_readings.toLocaleString()}{" "}
-                readings
-              </p>
-            </div>
-
-            <div className="detail-count">
+              <span>Total Readings</span>
               <strong>
-                {meterDetails.anomaly_count}
+                {selectedMeter.total_readings}
               </strong>
-
-              <span>anomalies</span>
             </div>
+
+            <div>
+              <span>Anomalies</span>
+              <strong>
+                {selectedMeter.anomaly_count}
+              </strong>
+            </div>
+
           </div>
 
-          {meterDetails.anomalies.length === 0 ? (
+          <h3>Detected Anomalies</h3>
+
+          {selectedMeter.anomalies.length === 0 ? (
             <p>No anomalies detected.</p>
           ) : (
             <div className="table-container">
+
               <table>
+
                 <thead>
                   <tr>
-                    <th>Time</th>
-                    <th>Type</th>
+                    <th>Timestamp</th>
                     <th>Consumption</th>
+                    <th>Classification</th>
                     <th>Confidence</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {meterDetails.anomalies
-                    .slice(0, 20)
-                    .map((anomaly, index) => (
-                      <tr key={index}>
-                        <td>
-                          {new Date(
-                            anomaly.timestamp
-                          ).toLocaleString()}
-                        </td>
 
+                  {selectedMeter.anomalies.map(
+                    (anomaly, index) => (
+                      <tr key={index}>
+                        <td>{anomaly.timestamp}</td>
+                        <td>
+                          {anomaly.consumption} kW
+                        </td>
                         <td>
                           {anomaly.classification}
                         </td>
-
-                        <td>
-                          {Number(
-                            anomaly.consumption
-                          ).toFixed(3)}
-                        </td>
-
                         <td>
                           {anomaly.confidence_score}%
                         </td>
                       </tr>
-                    ))}
+                    )
+                  )}
+
                 </tbody>
+
               </table>
+
             </div>
           )}
+
         </section>
       )}
 
       <section className="card">
-        <h2>Recent Anomalies</h2>
 
-        {anomalies.length === 0 ? (
-          <p>No anomalies detected.</p>
+        <div className="section-header">
+
+          <div>
+            <h2>Live Stream History</h2>
+            <p>
+              Recent readings received from the stream
+            </p>
+          </div>
+
+          <span className="history-count">
+            {streamHistory.length} readings
+          </span>
+
+        </div>
+
+        {streamHistory.length === 0 ? (
+          <p>No stream history available.</p>
         ) : (
           <div className="table-container">
+
             <table>
+
               <thead>
                 <tr>
                   <th>Meter</th>
-                  <th>Time</th>
-                  <th>Type</th>
+                  <th>Timestamp</th>
                   <th>Consumption</th>
+                  <th>Status</th>
                   <th>Confidence</th>
                 </tr>
               </thead>
 
               <tbody>
-                {anomalies
-                  .slice(0, 15)
-                  .map((anomaly, index) => (
+
+                {[...streamHistory]
+                  .reverse()
+                  .map((reading, index) => (
                     <tr key={index}>
-                      <td>
-                        {anomaly.meter_id}
-                      </td>
+
+                      <td>{reading.meter_id}</td>
 
                       <td>
                         {new Date(
-                          anomaly.timestamp
+                          reading.timestamp
                         ).toLocaleString()}
                       </td>
 
                       <td>
-                        {anomaly.classification}
+                        {reading.consumption} kW
                       </td>
 
                       <td>
-                        {Number(
-                          anomaly.consumption
-                        ).toFixed(3)}
+                        <span
+                          className={
+                            reading.classification !==
+                            "normal"
+                              ? "status-anomaly"
+                              : "status-normal"
+                          }
+                        >
+                          {reading.classification}
+                        </span>
                       </td>
 
                       <td>
-                        {anomaly.confidence_score}%
+                        {reading.confidence_score}%
                       </td>
+
                     </tr>
                   ))}
+
               </tbody>
+
             </table>
+
           </div>
         )}
+
       </section>
+
+      <section className="card">
+
+        <h2>Recent Anomalies</h2>
+
+        <div className="table-container">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Meter</th>
+                <th>Timestamp</th>
+                <th>Consumption</th>
+                <th>Classification</th>
+                <th>Confidence</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {anomalies.slice(0, 20).map(
+                (anomaly, index) => (
+                  <tr key={index}>
+
+                    <td>{anomaly.meter_id}</td>
+
+                    <td>{anomaly.timestamp}</td>
+
+                    <td>
+                      {anomaly.consumption} kW
+                    </td>
+
+                    <td>
+                      {anomaly.classification}
+                    </td>
+
+                    <td>
+                      {anomaly.confidence_score}%
+                    </td>
+
+                  </tr>
+                )
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+
     </div>
   );
 }
