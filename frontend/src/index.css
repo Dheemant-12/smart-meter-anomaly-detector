@@ -1,15 +1,3 @@
-
-.alert-card {
-  border: 2px solid #b91c1c;
-}
-
-.alert-card .live-indicator {
-  color: #b91c1c;
-}
-
-.alert-card .live-reading {
-  background: #fee2e2;
-}
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -38,6 +26,8 @@ header p {
   color: #666;
 }
 
+/* Statistics */
+
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -60,6 +50,8 @@ header p {
   font-size: 32px;
   margin-bottom: 5px;
 }
+
+/* Meter Grid */
 
 .meter-grid {
   display: grid;
@@ -91,6 +83,8 @@ header p {
   font-size: 14px;
 }
 
+/* Meter Details */
+
 .detail-header {
   display: flex;
   justify-content: space-between;
@@ -118,6 +112,8 @@ header p {
   font-size: 13px;
 }
 
+/* Tables */
+
 .table-container {
   overflow-x: auto;
 }
@@ -138,11 +134,66 @@ th {
   background: #f4f4f5;
 }
 
-.error {
-  padding: 15px;
-  background: #fee2e2;
+/* Live Reading */
+
+.live-card {
+  border: 2px solid #222;
+}
+
+.live-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.live-header p {
+  margin-bottom: 0;
+}
+
+.live-indicator {
+  font-weight: bold;
+}
+
+.live-reading {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 20px;
+  background: #f4f4f5;
   border-radius: 8px;
 }
+
+.live-reading div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.live-reading strong {
+  font-size: 24px;
+}
+
+.live-reading span {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Live Anomaly Alert */
+
+.alert-card {
+  border: 2px solid #b91c1c;
+}
+
+.alert-card .live-indicator {
+  color: #b91c1c;
+}
+
+.alert-card .live-reading {
+  background: #fee2e2;
+}
+
+/* Stream History */
+
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -158,6 +209,34 @@ th {
   font-weight: bold;
 }
 
+.history-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-button {
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.filter-button:hover {
+  background: #f4f4f5;
+}
+
+.filter-button.active {
+  background: #222;
+  color: white;
+  border-color: #222;
+}
+
+/* Status */
+
 .status-normal {
   font-weight: bold;
 }
@@ -166,22 +245,10 @@ th {
   font-weight: bold;
 }
 
-.table-container {
-  overflow-x: auto;
-}
+/* Error */
 
-.table-container table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table-container th,
-.table-container td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
-
-.table-container th {
-  font-weight: bold;
+.error {
+  padding: 15px;
+  background: #fee2e2;
+  border-radius: 8px;
 }

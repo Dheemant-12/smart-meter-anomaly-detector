@@ -10,6 +10,7 @@ function App() {
   const [selectedMeter, setSelectedMeter] = useState(null);
   const [latestReading, setLatestReading] = useState(null);
   const [streamHistory, setStreamHistory] = useState([]);
+  const [historyFilter, setHistoryFilter] = useState("all");
 
   useEffect(() => {
     async function loadDashboard() {
@@ -109,6 +110,33 @@ function App() {
   const liveIsAnomaly =
     latestReading &&
     latestReading.classification !== "normal";
+  const filteredHistory = streamHistory.filter(
+    (reading) => {
+      if (historyFilter === "all") {
+        return true;
+      }
+
+      if (historyFilter === "normal") {
+        return reading.classification === "normal";
+      }
+
+      if (historyFilter === "theft") {
+        return (
+          reading.classification ===
+          "theft_tampering"
+        );
+      }
+
+      if (historyFilter === "fault") {
+        return (
+          reading.classification ===
+          "meter_fault"
+        );
+      }
+
+      return true;
+    }
+  );
 
   return (
     <div className="app">
