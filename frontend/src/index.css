@@ -252,3 +252,14 @@ th {
   background: #fee2e2;
   border-radius: 8px;
 }
+.severity-normal {
+  font-weight: bold;
+}
+
+.severity-warning {
+  font-weight: bold;
+}
+
+.severity-critical {
+  font-weight: bold;
+}

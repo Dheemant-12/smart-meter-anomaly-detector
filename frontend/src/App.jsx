@@ -110,6 +110,22 @@ function App() {
   const liveIsAnomaly =
     latestReading &&
     latestReading.classification !== "normal";
+
+  function getSeverity(classification) {
+    if (classification === "normal") {
+      return "NORMAL";
+    }
+
+    if (
+      classification === "theft_tampering" ||
+      classification === "meter_fault"
+    ) {
+      return "CRITICAL";
+    }
+
+    return "WARNING";
+  }
+
   const filteredHistory = streamHistory.filter(
     (reading) => {
       if (historyFilter === "all") {
@@ -222,8 +238,14 @@ function App() {
                 {latestReading.consumption} kW
               </strong>
 
-              <span>
-                {latestReading.classification}
+              <span
+                className={`severity-${getSeverity(
+                  latestReading.classification
+                ).toLowerCase()}`}
+              >
+                {getSeverity(
+                  latestReading.classification
+                )}
               </span>
             </div>
 
@@ -351,13 +373,61 @@ function App() {
           </div>
 
           <span className="history-count">
-            {streamHistory.length} readings
+            {filteredHistory.length} readings
           </span>
 
         </div>
 
-        {streamHistory.length === 0 ? (
-          <p>No stream history available.</p>
+        <div className="history-filters">
+
+          <button
+            className={
+              historyFilter === "all"
+                ? "filter-button active"
+                : "filter-button"
+            }
+            onClick={() => setHistoryFilter("all")}
+          >
+            All
+          </button>
+
+          <button
+            className={
+              historyFilter === "normal"
+                ? "filter-button active"
+                : "filter-button"
+            }
+            onClick={() => setHistoryFilter("normal")}
+          >
+            Normal
+          </button>
+
+          <button
+            className={
+              historyFilter === "theft"
+                ? "filter-button active"
+                : "filter-button"
+            }
+            onClick={() => setHistoryFilter("theft")}
+          >
+            Theft / Tampering
+          </button>
+
+          <button
+            className={
+              historyFilter === "fault"
+                ? "filter-button active"
+                : "filter-button"
+            }
+            onClick={() => setHistoryFilter("fault")}
+          >
+            Meter Fault
+          </button>
+
+        </div>
+
+        {filteredHistory.length === 0 ? (
+          <p>No readings found.</p>
         ) : (
           <div className="table-container">
 
@@ -368,19 +438,21 @@ function App() {
                   <th>Meter</th>
                   <th>Timestamp</th>
                   <th>Consumption</th>
-                  <th>Status</th>
+                  <th>Severity</th>
                   <th>Confidence</th>
                 </tr>
               </thead>
 
               <tbody>
 
-                {[...streamHistory]
+                {[...filteredHistory]
                   .reverse()
                   .map((reading, index) => (
                     <tr key={index}>
 
-                      <td>{reading.meter_id}</td>
+                      <td>
+                        {reading.meter_id}
+                      </td>
 
                       <td>
                         {new Date(
@@ -394,14 +466,13 @@ function App() {
 
                       <td>
                         <span
-                          className={
-                            reading.classification !==
-                            "normal"
-                              ? "status-anomaly"
-                              : "status-normal"
-                          }
+                          className={`severity-${getSeverity(
+                            reading.classification
+                          ).toLowerCase()}`}
                         >
-                          {reading.classification}
+                          {getSeverity(
+                            reading.classification
+                          )}
                         </span>
                       </td>
 
