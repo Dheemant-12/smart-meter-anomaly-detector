@@ -255,7 +255,7 @@ function App() {
               </strong>
 
               <span>
-                Confidence
+                Detector Confidence
               </span>
             </div>
 
@@ -338,12 +338,15 @@ function App() {
                     (anomaly, index) => (
                       <tr key={index}>
                         <td>{anomaly.timestamp}</td>
+
                         <td>
                           {anomaly.consumption} kW
                         </td>
+
                         <td>
                           {anomaly.classification}
                         </td>
+
                         <td>
                           {anomaly.confidence_score}%
                         </td>
@@ -367,6 +370,7 @@ function App() {
 
           <div>
             <h2>Live Stream History</h2>
+
             <p>
               Recent readings received from the stream
             </p>
@@ -439,7 +443,7 @@ function App() {
                   <th>Timestamp</th>
                   <th>Consumption</th>
                   <th>Severity</th>
-                  <th>Confidence</th>
+                  <th>Detector Confidence</th>
                 </tr>
               </thead>
 
