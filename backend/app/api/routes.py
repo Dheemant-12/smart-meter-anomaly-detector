@@ -1,10 +1,12 @@
 from pathlib import Path
+import json
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException
 
 
 router = APIRouter()
+
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 
@@ -14,6 +16,21 @@ DATA_FILE = (
     / "processed"
     / "api_dataset.csv"
 )
+
+LATEST_FILE = (
+    BASE_DIR
+    / "data"
+    / "processed"
+    / "latest_reading.json"
+)
+
+HISTORY_FILE = (
+    BASE_DIR
+    / "data"
+    / "processed"
+    / "stream_history.json"
+)
+
 
 _df = None
 
@@ -150,4 +167,84 @@ def get_meter(meter_id: str):
         ].to_dict(
             orient="records"
         ),
+    }
+
+
+@router.get("/stream/latest")
+def get_latest_reading():
+    if not LATEST_FILE.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="No stream reading available",
+        )
+
+    with open(
+        LATEST_FILE,
+        "r",
+        encoding="utf-8",
+    ) as file:
+        reading = json.load(file)
+
+    return reading
+
+
+@router.get("/stream/history")
+def get_stream_history():
+    if not HISTORY_FILE.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="No stream history available",
+        )
+
+    with open(
+        HISTORY_FILE,
+        "r",
+        encoding="utf-8",
+    ) as file:
+        history = json.load(file)
+
+    return {
+        "count": len(history),
+        "history": history,
+    }
+
+
+@router.get("/stream/stats")
+def get_stream_stats():
+    if not HISTORY_FILE.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="No stream history available",
+        )
+
+    with open(
+        HISTORY_FILE,
+        "r",
+        encoding="utf-8",
+    ) as file:
+        history = json.load(file)
+
+    normal_count = sum(
+        reading["classification"] == "normal"
+        for reading in history
+    )
+
+    theft_count = sum(
+        reading["classification"]
+        == "theft_tampering"
+        for reading in history
+    )
+
+    fault_count = sum(
+        reading["classification"]
+        == "meter_fault"
+        for reading in history
+    )
+
+    return {
+        "total_readings": len(history),
+        "normal": normal_count,
+        "anomalies": theft_count + fault_count,
+        "theft_tampering": theft_count,
+        "meter_faults": fault_count,
     }
