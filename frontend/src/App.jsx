@@ -182,11 +182,22 @@ function App() {
     }
   );
 
+  const anomalyRate =
+    streamStats &&
+    streamStats.total_readings > 0
+      ? (
+          (streamStats.anomalies /
+            streamStats.total_readings) *
+          100
+        ).toFixed(1)
+      : "0.0";
+
   return (
     <div className="app">
 
       <header>
         <h1>Smart Meter Anomaly Detector</h1>
+
         <p>
           Real-time electricity monitoring and anomaly detection
         </p>
@@ -197,22 +208,30 @@ function App() {
 
           <div className="card stat-card">
             <span>Total Meters</span>
-            <strong>{summary.total_meters}</strong>
+            <strong>
+              {summary.total_meters}
+            </strong>
           </div>
 
           <div className="card stat-card">
             <span>Total Anomalies</span>
-            <strong>{summary.total_anomalies}</strong>
+            <strong>
+              {summary.total_anomalies}
+            </strong>
           </div>
 
           <div className="card stat-card">
             <span>Theft / Tampering</span>
-            <strong>{summary.theft_tampering}</strong>
+            <strong>
+              {summary.theft_tampering}
+            </strong>
           </div>
 
           <div className="card stat-card">
             <span>Meter Faults</span>
-            <strong>{summary.meter_faults}</strong>
+            <strong>
+              {summary.meter_faults}
+            </strong>
           </div>
 
         </section>
@@ -241,6 +260,7 @@ function App() {
 
             <div className="card stat-card">
               <span>Normal</span>
+
               <strong>
                 {streamStats.normal}
               </strong>
@@ -248,6 +268,7 @@ function App() {
 
             <div className="card stat-card">
               <span>Anomalies</span>
+
               <strong>
                 {streamStats.anomalies}
               </strong>
@@ -255,6 +276,7 @@ function App() {
 
             <div className="card stat-card">
               <span>Theft / Tampering</span>
+
               <strong>
                 {streamStats.theft_tampering}
               </strong>
@@ -262,8 +284,17 @@ function App() {
 
             <div className="card stat-card">
               <span>Meter Faults</span>
+
               <strong>
                 {streamStats.meter_faults}
+              </strong>
+            </div>
+
+            <div className="card stat-card">
+              <span>Anomaly Rate</span>
+
+              <strong>
+                {anomalyRate}%
               </strong>
             </div>
 
@@ -360,10 +391,15 @@ function App() {
                   ? "meter-card selected"
                   : "meter-card"
               }
-              onClick={() => handleMeterClick(meter)}
+              onClick={() =>
+                handleMeterClick(meter)
+              }
             >
               <strong>{meter}</strong>
-              <span>Click to view details</span>
+
+              <span>
+                Click to view details
+              </span>
             </button>
           ))}
 
@@ -382,6 +418,7 @@ function App() {
 
             <div>
               <span>Total Readings</span>
+
               <strong>
                 {selectedMeter.total_readings}
               </strong>
@@ -389,6 +426,7 @@ function App() {
 
             <div>
               <span>Anomalies</span>
+
               <strong>
                 {selectedMeter.anomaly_count}
               </strong>
@@ -419,7 +457,10 @@ function App() {
                   {selectedMeter.anomalies.map(
                     (anomaly, index) => (
                       <tr key={index}>
-                        <td>{anomaly.timestamp}</td>
+
+                        <td>
+                          {anomaly.timestamp}
+                        </td>
 
                         <td>
                           {anomaly.consumption} kW
@@ -432,6 +473,7 @@ function App() {
                         <td>
                           {anomaly.confidence_score}%
                         </td>
+
                       </tr>
                     )
                   )}
@@ -472,7 +514,9 @@ function App() {
                 ? "filter-button active"
                 : "filter-button"
             }
-            onClick={() => setHistoryFilter("all")}
+            onClick={() =>
+              setHistoryFilter("all")
+            }
           >
             All
           </button>
@@ -483,7 +527,9 @@ function App() {
                 ? "filter-button active"
                 : "filter-button"
             }
-            onClick={() => setHistoryFilter("normal")}
+            onClick={() =>
+              setHistoryFilter("normal")
+            }
           >
             Normal
           </button>
@@ -494,7 +540,9 @@ function App() {
                 ? "filter-button active"
                 : "filter-button"
             }
-            onClick={() => setHistoryFilter("theft")}
+            onClick={() =>
+              setHistoryFilter("theft")
+            }
           >
             Theft / Tampering
           </button>
@@ -505,7 +553,9 @@ function App() {
                 ? "filter-button active"
                 : "filter-button"
             }
-            onClick={() => setHistoryFilter("fault")}
+            onClick={() =>
+              setHistoryFilter("fault")
+            }
           >
             Meter Fault
           </button>
@@ -602,9 +652,13 @@ function App() {
                 (anomaly, index) => (
                   <tr key={index}>
 
-                    <td>{anomaly.meter_id}</td>
+                    <td>
+                      {anomaly.meter_id}
+                    </td>
 
-                    <td>{anomaly.timestamp}</td>
+                    <td>
+                      {anomaly.timestamp}
+                    </td>
 
                     <td>
                       {anomaly.consumption} kW
