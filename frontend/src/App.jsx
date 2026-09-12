@@ -10,6 +10,7 @@ function App() {
   const [selectedMeter, setSelectedMeter] = useState(null);
   const [latestReading, setLatestReading] = useState(null);
   const [streamHistory, setStreamHistory] = useState([]);
+  const [streamStats, setStreamStats] = useState(null);
   const [historyFilter, setHistoryFilter] = useState("all");
 
   useEffect(() => {
@@ -86,6 +87,33 @@ function App() {
 
     const interval = setInterval(
       loadStreamHistory,
+      1000
+    );
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    async function loadStreamStats() {
+      try {
+        const response = await fetch(
+          `${API_URL}/stream/stats`
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        setStreamStats(data);
+      } catch (error) {
+        console.log("Stream stats unavailable");
+      }
+    }
+
+    loadStreamStats();
+
+    const interval = setInterval(
+      loadStreamStats,
       1000
     );
 
@@ -185,6 +213,60 @@ function App() {
           <div className="card stat-card">
             <span>Meter Faults</span>
             <strong>{summary.meter_faults}</strong>
+          </div>
+
+        </section>
+      )}
+
+      {streamStats && (
+        <section className="card">
+
+          <div className="section-header">
+
+            <div>
+              <h2>Stream Statistics</h2>
+
+              <p>
+                Real-time statistics from the meter stream
+              </p>
+            </div>
+
+            <span className="history-count">
+              {streamStats.total_readings} readings
+            </span>
+
+          </div>
+
+          <div className="stats-grid">
+
+            <div className="card stat-card">
+              <span>Normal</span>
+              <strong>
+                {streamStats.normal}
+              </strong>
+            </div>
+
+            <div className="card stat-card">
+              <span>Anomalies</span>
+              <strong>
+                {streamStats.anomalies}
+              </strong>
+            </div>
+
+            <div className="card stat-card">
+              <span>Theft / Tampering</span>
+              <strong>
+                {streamStats.theft_tampering}
+              </strong>
+            </div>
+
+            <div className="card stat-card">
+              <span>Meter Faults</span>
+              <strong>
+                {streamStats.meter_faults}
+              </strong>
+            </div>
+
           </div>
 
         </section>
