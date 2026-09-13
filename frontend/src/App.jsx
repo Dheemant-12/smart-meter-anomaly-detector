@@ -12,6 +12,7 @@ function App() {
   const [streamHistory, setStreamHistory] = useState([]);
   const [streamStats, setStreamStats] = useState(null);
   const [streamOnline, setStreamOnline] = useState(false);
+  const [lastStreamUpdate, setLastStreamUpdate] = useState(null);
   const [historyFilter, setHistoryFilter] = useState("all");
 
   useEffect(() => {
@@ -58,6 +59,7 @@ function App() {
 
         setLatestReading(data);
         setStreamOnline(true);
+        setLastStreamUpdate(new Date());
       } catch (error) {
         console.log("Stream unavailable");
         setStreamOnline(false);
@@ -267,7 +269,6 @@ function App() {
 
             <div className="card stat-card">
               <span>Normal</span>
-
               <strong>
                 {streamStats.normal}
               </strong>
@@ -275,7 +276,6 @@ function App() {
 
             <div className="card stat-card">
               <span>Anomalies</span>
-
               <strong>
                 {streamStats.anomalies}
               </strong>
@@ -283,7 +283,6 @@ function App() {
 
             <div className="card stat-card">
               <span>Theft / Tampering</span>
-
               <strong>
                 {streamStats.theft_tampering}
               </strong>
@@ -291,7 +290,6 @@ function App() {
 
             <div className="card stat-card">
               <span>Meter Faults</span>
-
               <strong>
                 {streamStats.meter_faults}
               </strong>
@@ -299,7 +297,6 @@ function App() {
 
             <div className="card stat-card">
               <span>Anomaly Rate</span>
-
               <strong>
                 {anomalyRate}%
               </strong>
@@ -320,6 +317,13 @@ function App() {
             <p>
               Current connection status
             </p>
+
+            {lastStreamUpdate && (
+              <p>
+                Last updated:{" "}
+                {lastStreamUpdate.toLocaleTimeString()}
+              </p>
+            )}
           </div>
 
           <strong>
