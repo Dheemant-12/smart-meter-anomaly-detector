@@ -11,6 +11,7 @@ function App() {
   const [latestReading, setLatestReading] = useState(null);
   const [streamHistory, setStreamHistory] = useState([]);
   const [streamStats, setStreamStats] = useState(null);
+  const [streamOnline, setStreamOnline] = useState(false);
   const [historyFilter, setHistoryFilter] = useState("all");
 
   useEffect(() => {
@@ -48,12 +49,18 @@ function App() {
           `${API_URL}/stream/latest`
         );
 
-        if (!response.ok) return;
+        if (!response.ok) {
+          setStreamOnline(false);
+          return;
+        }
 
         const data = await response.json();
+
         setLatestReading(data);
+        setStreamOnline(true);
       } catch (error) {
         console.log("Stream unavailable");
+        setStreamOnline(false);
       }
     }
 
@@ -302,6 +309,28 @@ function App() {
 
         </section>
       )}
+
+      <section className="card">
+
+        <div className="section-header">
+
+          <div>
+            <h2>Stream Status</h2>
+
+            <p>
+              Current connection status
+            </p>
+          </div>
+
+          <strong>
+            {streamOnline
+              ? "🟢 HEALTHY"
+              : "🔴 OFFLINE"}
+          </strong>
+
+        </div>
+
+      </section>
 
       {latestReading && (
         <section
